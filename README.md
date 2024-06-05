@@ -1,5 +1,5 @@
+![LAMP server cover](https://github.com/zz22558822/LAMP/blob/main/img/LAMP%20server.png)
 # LAMP server 一鍵安裝
-
 ## LAMP server install script
 
 ---
