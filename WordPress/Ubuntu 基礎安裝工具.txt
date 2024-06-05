@@ -51,3 +51,12 @@ sudo systemctl start fail2ban
 # 開機啟動 fail2ban
 sudo systemctl enable fail2ban
 -------------------
+
+
+##### 安裝 hardinfo
+sudo apt install hardinfo
+-------------------
+# hardinfo 2代安裝方法
+sudo wget https://github.com/hardinfo2/hardinfo2/releases/download/release-2.1.10pre/hardinfo2_2.1.10-Ubuntu-24.04_amd64.deb
+sudo dpkg -i hardinfo2_2.1.10-Ubuntu-24.04_amd64.deb
+-------------------
