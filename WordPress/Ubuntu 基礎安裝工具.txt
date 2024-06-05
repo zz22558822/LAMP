@@ -1,0 +1,53 @@
+##### 更新
+sudo apt update
+sudo apt upgrade -y
+
+
+##### 安裝 SSH
+sudo apt install openssh-server
+
+
+##### 安裝 Vim
+sudo apt install vim
+
+
+##### 安裝 gufw
+sudo apt install gufw
+
+
+##### 安裝 Fail2ban
+sudo apt install python3-pip
+sudo pip install asynchat
+sudo apt install fail2ban
+-------------------
+# 使用 Python 3.12以上需使用此版本以上
+sudo wget https://github.com/fail2ban/fail2ban/releases/download/1.1.0/fail2ban_1.1.0-1.upstream1_all.deb
+sudo dpkg -i fail2ban_1.1.0-1.upstream1_all.deb
+-------------------
+# 設定參數
+sudo nano /etc/fail2ban/jail.local
+# 貼上參數
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = /var/log/fail2ban.log
+
+maxretry = 3
+findtime = 60
+bantime  = 7200
+destmail = your_email@gmail.com
+# 重啟 Fail2ban
+sudo service fail2ban restart
+-------------------
+# 查詢封鎖名單(總表)
+sudo fail2ban-client status
+# 查詢封鎖名單(指定封鎖表)
+sudo fail2ban-client status sshd
+# 解除封鎖名單
+sudo fail2ban-client set sshd unbanip 要解除的IP
+# 啟動 fail2ban
+sudo systemctl start fail2ban
+# 開機啟動 fail2ban
+sudo systemctl enable fail2ban
+-------------------

@@ -1,0 +1,188 @@
+# 更新Ubuntu
+sudo apt update && sudo apt upgrade
+
+
+# 安裝LAMP Server
+sudo apt install apache2 mysql-server php libapache2-mod-php php-mysql
+
+
+# 建立 PHP 資訊
+sudo nano /var/www/html/info.php
+# 在內容處貼上
+<?php
+phpinfo();
+?>
+
+
+# 安裝phpMyAdmin
+sudo apt install phpmyadmin
+# 空白鍵選擇 apache2 使用Tab選擇確定
+# dbconfig-common 選擇「是」
+# 接著設定使用者密碼兩次
+-------------------
+# phpmyadmin 安裝後若無Page需啟動
+sudo ln -s /etc/phpmyadmin/apache.conf /etc/apache2/conf-available/phpmyadmin.conf
+sudo ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
+sudo service apache2 restart
+-------------------
+
+
+# 設定MySQL
+sudo mysql -u root mysql
+UPDATE user SET plugin='mysql_native_password' WHERE User='root';
+FLUSH PRIVILEGES;
+exit;
+sudo mysql_secure_installation
+# 連續輸入 Y > 0 > Y > Y > Y > Y
+
+
+# 更改MySQL密碼
+sudo mysql -u root -p
+ALTER USER 'root'@'localhost' IDENTIFIED BY '要更改的密碼';
+FLUSH PRIVILEGES;
+exit;
+sudo systemctl start mysql
+
+
+# 設定wordpress資料庫
+sudo mysql -u root -p
+CREATE DATABASE wordpress CHARACTER SET utf8 COLLATE utf8_unicode_ci;
+exit;
+
+
+# 設定phpmyadmin權限
+GRANT ALL PRIVILEGES ON wordpress.* TO 'phpmyadmin'@'localhost';
+# 這是授予全部資料庫 (選用)
+GRANT ALL PRIVILEGES ON *.* TO 'phpmyadmin'@'localhost' WITH GRANT OPTION;
+
+
+# 安裝wordpress
+sudo wget -P 下載/ https://tw.wordpress.org/latest-zh_TW.tar.gz
+sudo tar -zxvf 下載/latest-zh_TW.tar.gz -C /var/www/
+sudo nano /etc/apache2/sites-available/000-default.conf
+# 找到 DocumentRoot /var/www/html 改為 /var/www/wordpress
+sudo service apache2 restart
+
+
+# 初始化wordpress
+資料庫名稱: wordpress
+使用者名稱: root
+密碼: MySQL的密碼
+資料庫主機位址: localhost
+資料表前置詞: wp_
+# 通常會出現【無法寫入 wp-config.php 檔案】
+sudo nano /var/www/wordpress/wp-config.php
+# 將網頁的內容複製下來後貼上
+# 並在  * @package WordPress */ 之後貼上
+define('FS_METHOD', 'direct');
+-------------------
+# 若要使用動態IP做為站點 可以再額外加入，但是會無法手動更改
+define('WP_HOME', 'http://' . $_SERVER['HTTP_HOST']);
+define('WP_SITEURL', 'http://' . $_SERVER['HTTP_HOST']);
+-------------------
+# 回到網頁後繼續操作並填入標題、管理員名稱、密碼、Mail之後即可登入
+
+
+# 目錄權限wordpress
+sudo chown -R www-data:www-data /var/www/wordpress
+sudo chown -R www-data:www-data /var/www/wordpress/wp-includes/
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/
+sudo find /var/www/wordpress -type d -exec chmod 755 {} \;
+sudo find /var/www/wordpress -type f -exec chmod 644 {} \;
+sudo chmod 640 /var/www/wordpress/wp-config.php
+sudo chmod 755 /var/www/wordpress/wp-content
+sudo mkdir -p /var/www/wordpress/wp-content/upgrade
+sudo mkdir -p /var/www/wordpress/wp-content/uploads
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/upgrade/
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/uploads/
+sudo chmod -R 775 /var/www/wordpress/wp-content/upgrade
+sudo chmod -R 775 /var/www/wordpress/wp-content/uploads
+-------------------
+# 如果啟用了 SELinux，執行這行
+sudo chcon -R -t httpd_sys_rw_content_t /var/www/wordpress
+# 設定防火牆
+sudo ufw allow 'Apache Full'
+-------------------
+# 若只要單獨外掛資料夾權限
+sudo chown -R www-data:www-data /var/www/wordpress/wp-includes/
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/
+-------------------
+
+
+# 解決中文URL 404 問題
+sudo nano /var/www/wordpress/index.php
+# 第二行加入
+$_SERVER['REQUEST_URI'] = urldecode($_SERVER['REQUEST_URI']);
+-------------------
+# 倘若修改永久連結後顯示 404 也無法新增頁面
+# 先檢查永久連結最前方是否有 /index.php
+-------------------
+
+
+# 去掉index.php的方法
+# Apache 伺服器設定
+sudo nano /etc/apache2/apache2.conf
+# 找到類似的 將 AllowOverride 都改為 All、Require all 都改為 granted
+-------------------
+<Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+-------------------
+
+sudo service apache2 restart
+
+# 在 WordPress 的設定 > 永久連結 > 先設定好
+# 之後到 .htaccess 設定後就不要再動 永久連結
+sudo nano /var/www/wordpress/.htaccess
+# 將全部都移除後輸入以下內容
+-------------------
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+-------------------
+# 設定 .htaccess權限
+sudo chmod 644 /var/www/wordpress/.htaccess
+sudo chown -R www-data:www-data /var/www/wordpress
+sudo chmod -R 755 /var/www/wordpress
+
+# 確認 mod_rewrite 模塊啟用
+sudo a2enmod rewrite
+# 重啟 Apache 伺服器
+sudo service apache2 restart
+
+
+
+# 改變上傳檔案限制
+sudo nano /etc/php/8.3/apache2/php.ini
+# 找到 upload_max_filesize = 2M
+# 改為需要的大小即可
+
+
+
+
+
+
+
+# 主題
+BlogArise
+Blogxo
+Responsive
+Oaknut
+
+
+
+
+
+
+
+
+
