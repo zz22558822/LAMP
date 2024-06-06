@@ -164,6 +164,7 @@ sudo service apache2 restart
 # 改變上傳檔案限制
 sudo nano /etc/php/8.3/apache2/php.ini
 # 找到 upload_max_filesize = 2M
+# 找到 post_max_size = 8M
 # 改為需要的大小即可
 
 
