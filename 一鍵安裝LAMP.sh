@@ -50,8 +50,50 @@ send "exit;\r"
 # LAMP 完成
 echo ""
 echo "基礎 LAMP 建置完成."
-echo "請用戶自行設定: 更改MySQL密碼、規則等..."
-echo "◆ sudo mysql_secure_installation"
-echo "◆ sudo mysql -u root -p"
-echo "◆ ALTER USER 'root'@'localhost' IDENTIFIED BY '要更改的密碼';"
+echo "正在設定 MySQL..."
+#echo "請用戶自行設定: 更改MySQL密碼、規則等..."
+#echo "◆ sudo mysql_secure_installation"
+#echo "◆ sudo mysql -u root -p"
+#echo "◆ ALTER USER 'root'@'localhost' IDENTIFIED BY '要更改的密碼';"
+#echo ""
+
+# MySQL密碼安全性規則
+sudo mysql_secure_installation <<EOF
+Y
+0
+Y
+Y
+Y
+Y
+EOF
+
+# 使用者輸入要建立的密碼
 echo ""
+echo "----------------------------------"
+read -p "請建立 MySQL root密碼: " rootpassword
+echo "----------------------------------"
+echo ""
+
+# 更改MySQL密碼
+echo "更改MySQL密碼..."
+expect -c "
+spawn sudo mysql -u root -p
+expect \"Enter password:\"
+send \"\r\"
+expect \"mysql>\"
+send \"ALTER USER 'root'@'localhost' IDENTIFIED BY '$rootpassword';\r\"
+expect \"mysql>\"
+send \"FLUSH PRIVILEGES;\r\"
+expect \"mysql>\"
+send \"exit;\r\"
+send \"\r\"
+"
+# 重啟 MySQL
+sudo systemctl start mysql
+
+# 重啟Apache服務
+echo "重啟Apache服務..."
+sudo systemctl restart apache2
+
+echo ""
+echo "所有 LAMP 設定完成."

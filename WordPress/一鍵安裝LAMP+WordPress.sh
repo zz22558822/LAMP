@@ -28,12 +28,6 @@ sudo systemctl restart apache2
 echo "Include /etc/phpmyadmin/apache.conf" | sudo tee -a /etc/apache2/apache2.conf
 sudo systemctl reload apache2
 
-# LAMP 完成
-echo "基礎 LAMP 建置完成."
-
-
-
-
 # 設定MySQL
 echo "設定MySQL..."
 expect -c '
@@ -52,32 +46,21 @@ expect "mysql>"
 send "exit;\r"
 '
 
-sudo mysql_secure_installation <<EOF
 
+# LAMP 完成
+echo ""
+echo "基礎 LAMP 建置完成."
+
+# MySQL密碼安全性規則
+sudo mysql_secure_installation <<EOF
 Y
 0
 Y
 Y
 Y
 Y
-
 EOF
 
-# 更改MySQL密碼
-echo "更改MySQL密碼..."
-expect -c '
-spawn sudo mysql -u root -p
-expect "Enter password:"
-send "\r"
-expect "mysql>"
-send "ALTER USER 'root'@'localhost' IDENTIFIED BY '\''your_root_password'\'';\r"
-expect "mysql>"
-send "FLUSH PRIVILEGES;\r"
-expect "mysql>"
-send "exit;\r"
-'
-
-sudo systemctl start mysql
 
 # 設定wordpress資料庫
 echo "設定wordpress資料庫..."
@@ -88,12 +71,36 @@ send "\r"
 expect "mysql>"
 send "CREATE DATABASE wordpress CHARACTER SET utf8 COLLATE utf8_unicode_ci;\r"
 expect "mysql>"
-send "GRANT ALL PRIVILEGES ON *.* TO '\''phpmyadmin'\''@'\''localhost'\'' WITH GRANT OPTION;\r"
-expect "mysql>"
 send "FLUSH PRIVILEGES;\r"
 expect "mysql>"
 send "exit;\r"
 '
+
+
+# 使用者輸入要建立的密碼
+echo ""
+echo "----------------------------------"
+read -p "請建立 MySQL root密碼: " rootpassword
+echo "----------------------------------"
+echo ""
+
+# 更改MySQL密碼
+echo "更改MySQL密碼..."
+expect -c "
+spawn sudo mysql -u root -p
+expect \"Enter password:\"
+send \"\r\"
+expect \"mysql>\"
+send \"ALTER USER 'root'@'localhost' IDENTIFIED BY '$rootpassword';\r\"
+expect \"mysql>\"
+send \"FLUSH PRIVILEGES;\r\"
+expect \"mysql>\"
+send \"exit;\r\"
+send \"\r\"
+"
+# 重啟 MySQL
+sudo systemctl start mysql
+
 
 # 安裝wordpress
 echo "安裝wordpress..."
@@ -105,4 +112,37 @@ sudo sed -i 's/DocumentRoot \/var\/www\/html/DocumentRoot \/var\/www\/wordpress/
 echo "重啟Apache服務..."
 sudo systemctl restart apache2
 
+
+
+# WordPress 寫入資料權限問題
+# 設置文件和目錄的所有者和權限
+sudo chown -R www-data:www-data /var/www/wordpress
+sudo chown -R www-data:www-data /var/www/wordpress/wp-includes/
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/
+sudo find /var/www/wordpress -type d -exec chmod 755 {} \;
+sudo find /var/www/wordpress -type f -exec chmod 644 {} \;
+sudo chmod 640 /var/www/wordpress/wp-config.php
+sudo chmod 755 /var/www/wordpress/wp-content
+sudo mkdir -p /var/www/wordpress/wp-content/upgrade
+sudo mkdir -p /var/www/wordpress/wp-content/uploads
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/upgrade/
+sudo chown -R www-data:www-data /var/www/wordpress/wp-content/uploads/
+sudo chmod -R 775 /var/www/wordpress/wp-content/upgrade
+sudo chmod -R 775 /var/www/wordpress/wp-content/uploads
+# 固定連結用的權限
+#sudo chmod 644 /var/www/wordpress/.htaccess
+sudo chown -R www-data:www-data /var/www/wordpress
+sudo chmod -R 755 /var/www/wordpress
+
+
 echo "安裝wordpress完成."
+echo ""
+echo "開啟 WordPress 後台初始化頁面"
+sudo firefox http://localhost
+echo ""
+echo "建議用戶還須設定"
+echo "1. 中文URL 404問題"
+echo "2. 固定連結去掉index.php"
+echo "3. 若內往網路 需設定變動IP 適應DHCP"
+echo "4. 改變上傳檔案限制"
+
