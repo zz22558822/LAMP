@@ -44,7 +44,7 @@
 
     ![確認密碼](https://github.com/zz22558822/LAMP/blob/main/img/phpMyAdmin4.png)
 
-7. 安裝完成後，請用戶自行更改 MySQL 密碼、規則等：
+~~7. 安裝完成後，請用戶自行更改 MySQL 密碼、規則等：
     - 設定 MySQL 安全性:
       ```sh
       sudo mysql_secure_installation
@@ -56,6 +56,24 @@
     - 修改 root 密碼:
       ```sql
       ALTER USER 'root'@'localhost' IDENTIFIED BY '你的新密碼';
-      ```
+      ```~~
 
 **注意：** 在執行腳本前，請確保你的系統已經具有相應的權限，並謹慎對待任何需要輸入密碼的操作。
+
+
+---
+# LAMP + WordPress install script
+
+## 使用教學
+1. 下載安裝腳本:
+    ```sh
+    https://github.com/zz22558822/LAMP/releases/download/upload/install_LAMP+WordPress.sh
+    ```
+
+2. 執行腳本:
+    ```sh
+    sudo chmod +x install_LAMP+WordPress.sh && sudo bash ./install_LAMP+WordPress.sh
+    ```
+3. ~ 6.均與上方相同
+
+7. 輸入要設定的 MySQL root 密碼:
