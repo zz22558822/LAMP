@@ -29,6 +29,7 @@ sudo service apache2 restart
 
 # 設定MySQL
 sudo mysql -u root mysql
+USE mysql;
 UPDATE user SET plugin='mysql_native_password' WHERE User='root';
 FLUSH PRIVILEGES;
 exit;

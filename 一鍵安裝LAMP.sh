@@ -35,6 +35,8 @@ spawn sudo mysql -u root -p
 expect "Enter password:"
 send "\r"
 expect "mysql>"
+send "USE mysql;\r"
+expect "mysql>"
 send "UPDATE user SET plugin='mysql_native_password' WHERE User='root';\r"
 expect "mysql>"
 send "GRANT ALL PRIVILEGES ON *.* TO '\''phpmyadmin'\''@'\''localhost'\'' WITH GRANT OPTION;\r"
